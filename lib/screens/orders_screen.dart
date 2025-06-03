@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/cart_provider.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
+import 'dart:convert';
 
 class OrdersScreen extends StatefulWidget {
   static const routeName = '/orders';
@@ -22,10 +24,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Future<void> _loadOrders() async {
-    // Simulate loading orders (replace with actual storage if needed)
-    setState(() {
-      // orders = ... (load from SharedPreferences or API if implemented)
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ordersData = prefs.getString('orders');
+      print('Loaded Orders Data: $ordersData');
+      if (ordersData != null && ordersData.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(ordersData);
+        setState(() {
+          orders = decoded.map((item) => Order.fromJson(item)).toList();
+        });
+        print('Parsed Orders: ${orders.length}');
+      } else {
+        print('No orders found in SharedPreferences');
+      }
+    } catch (e) {
+      print('Error loading orders: $e');
+    }
+  }
+
+  Future<void> _saveOrders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(orders.map((order) => order.toJson()).toList());
+      await prefs.setString('orders', encoded);
+      print('Saved Orders Data: $encoded');
+    } catch (e) {
+      print('Error saving orders: $e');
+    }
   }
 
   @override
@@ -80,12 +105,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
           if (cartProvider.itemCount > 0) {
             setState(() {
               orders.add(Order(
-                id: DateTime.now().millisecondsSinceEpoch,
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
                 items: List<CartItem>.from(cartProvider.items),
                 total: cartProvider.totalPrice,
                 date: DateTime.now(),
               ));
             });
+            _saveOrders();
             cartProvider.clearCart();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Order placed successfully')),
