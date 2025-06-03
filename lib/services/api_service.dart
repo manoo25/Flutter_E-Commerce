@@ -4,12 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://ecommerce.routemisr.com/api/v1';
-  static const String imageBaseUrl = 'https://ecommerce.routemisr.com/Route-Academy-products';
+  static const String baseUrl = 'https://ib.jamalmoallart.com/api';
+  static const String imageBaseUrl = 'https://ib.jamalmoallart.com';
 
   Future<List<Product>> getProducts() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/products'));
+      print('Get Products API Request URL: ${Uri.parse('$baseUrl/products')}');
       print('Get Products API Response Status: ${response.statusCode}');
       print('Get Products API Response Body: ${response.body}');
       if (response.statusCode == 200) {
@@ -28,6 +29,7 @@ class ApiService {
   Future<List<Product>> getProductsByCategory(String category) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/products?category[in]=$category'));
+      print('Get Products by Category API Request URL: ${Uri.parse('$baseUrl/products?category[in]=$category')}');
       print('Get Products by Category API Response Status: ${response.statusCode}');
       print('Get Products by Category API Response Body: ${response.body}');
       if (response.statusCode == 200) {

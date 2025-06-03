@@ -9,8 +9,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -21,11 +19,10 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'Ecommerce App',
+            title: 'E-Commerce App',
             theme: themeProvider.currentTheme,
-            navigatorKey: _navigatorKey,
             initialRoute: '/login',
-            routes: getRoutes(),
+            routes: Routes.getRoutes(),
             debugShowCheckedModeBanner: false,
           );
         },

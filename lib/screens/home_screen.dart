@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/providers/theme_provider.dart';
 import '../services/api_service.dart';
 import '../models/product_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'product_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  static const routeName = '/home';
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
-  List<String> categories = ['Electronics', 'Clothing', 'Books'];
+  final List<String> categories = ['Electronics', 'Clothing', 'Books'];
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +28,12 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.shopping_cart),
             onPressed: () => Navigator.pushNamed(context, '/cart'),
           ),
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+          ),
         ],
       ),
       drawer: Drawer(
@@ -32,7 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
             ),
             ListTile(
               title: const Text('Home'),
@@ -65,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Carousel Slider
             CarouselSlider(
               options: CarouselOptions(height: 200.0, autoPlay: true),
               items: [
@@ -82,9 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }).toList(),
             ),
+            // Categories Section
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('Categories', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Categories',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
             SizedBox(
               height: 50,
@@ -96,7 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/category', arguments: categories[index]);
+                        Navigator.pushNamed(
+                          context,
+                          '/category',
+                          arguments: categories[index],
+                        );
                       },
                       child: Text(categories[index]),
                     ),
@@ -104,9 +126,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
+            // Products Section
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('Products', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Products',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
             FutureBuilder<List<Product>>(
               future: _apiService.getProducts(),
@@ -117,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   print('Error loading products: ${snapshot.error}');
                   return const Center(child: Text('Failed to load products'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  print('No products available');
                   return const Center(child: Text('No products available'));
                 }
                 final products = snapshot.data!;
@@ -133,52 +160,62 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return Card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Image.network(
-                              product.image,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                print('Image load error for ${product.image}: $error');
-                                return Image.asset('assets/images/placeholder.jpg');
-                              },
-                            ),
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductDetailsScreen(product: product),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              product.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                      child: Card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Image.network(
+                                product.image,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Image load error for ${product.image}: $error');
+                                  return Image.asset('assets/images/placeholder.jpg');
+                                },
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              product.discount > 0
-                                  ? '\$${(product.price * (1 - product.discount / 100)).toStringAsFixed(2)}'
-                                  : '\$${product.price.toStringAsFixed(2)}',
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                product.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Provider.of<CartProvider>(context, listen: false)
-                                    .addItem(product.id, product.name, product.price, product.image);
-                                print('Added to cart: ${product.name}');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${product.name} added to cart')),
-                                );
-                              },
-                              child: const Text('Add to Cart'),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text(
+                                product.discount > 0
+                                    ? '\$${(product.price * (1 - product.discount / 100)).toStringAsFixed(2)}'
+                                    : '\$${product.price.toStringAsFixed(2)}',
+                              ),
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Provider.of<CartProvider>(context, listen: false)
+                                      .addItem(product.id, product.name, product.price, product.image);
+                                  print('Added to cart: ${product.name}');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('${product.name} added to cart')),
+                                  );
+                                },
+                                child: const Text('Add to Cart'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
