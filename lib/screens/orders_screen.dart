@@ -52,7 +52,7 @@ class OrdersScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.receipt, color: Colors.pink, size: 24),
+                            Icon(Icons.shopping_bag_outlined, color: Colors.pink, size: 24),
                             SizedBox(width: 8),
                             Text(
                               'Order #${order.id}',
@@ -97,8 +97,8 @@ class OrdersScreen extends StatelessWidget {
                                       fit: BoxFit.contain,
                                       errorBuilder: (context, error, stackTrace) {
                                         print('Image load error: $error, URL: ${item.image}');
-                                        return Image.asset(
-                                          'assets/images/placeholder.jpg',
+                                        return Image.network(
+                                          "https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg",
                                           width: 60,
                                           height: 60,
                                           fit: BoxFit.contain,

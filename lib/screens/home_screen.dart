@@ -12,6 +12,7 @@ import 'product_details_screen.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
 import 'category_screen.dart';
+import 'profile_screen.dart'; // تأكد أنك عامل الصفحة دي
 import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
@@ -77,6 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _handleMenuSelection(String value) async {
+    if (value == 'profile') {
+      Navigator.pushNamed(context, ProfileScreen.routeName);
+    } else if (value == 'logout') {
+      await AuthService.clearUserData();
+      Navigator.pushReplacementNamed(context, '/login'); // تأكد أن عندك مسار login
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -92,16 +102,31 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Center(
-        child: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            prefixIcon: Icon(Icons.search, color: Colors.pink),
-            hintText: 'Search...',
-            hintStyle: TextStyle(color: Colors.pink),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                prefixIcon: Icon(Icons.search, color: Colors.pink),
+                hintText: 'Search...',
+                hintStyle: TextStyle(color: Colors.pink),
+              ),
+              style: TextStyle(color: Colors.pink),
+            ),
           ),
-          style: TextStyle(color: Colors.pink),
         ),
-      ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: PopupMenuButton<String>(
+            onSelected: _handleMenuSelection,
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 'profile', child: Text('Profile')),
+              PopupMenuItem(value: 'logout', child: Text('Logout')),
+            ],
+            child: CircleAvatar(
+  radius: 20,
+  backgroundColor: Colors.grey[200],
+  backgroundImage: const AssetImage('assets/images/placeholder.jpg'),
+),
+          ),
         ),
         actions: [
           IconButton(
@@ -142,8 +167,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fit: BoxFit.contain,
                                   width: double.infinity,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/placeholder.jpg',
+                                    return Image.network(
+                                       "https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg",
                                       fit: BoxFit.contain,
                                     );
                                   },
@@ -254,8 +279,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             fit: BoxFit.cover,
                                             width: double.infinity,
                                             errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/placeholder.jpg',
+                                              return Image.network(
+                                               "https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg",
                                                 fit: BoxFit.cover,
                                               );
                                             },
@@ -277,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Text(
                                           '\$${discountedPrice}',
                                           style: TextStyle(
-                                            color:  Colors.green,
+                                            color: Colors.green,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),

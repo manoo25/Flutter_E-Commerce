@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
             title: 'Ecommerce App',
             theme: themeProvider.currentTheme,
             navigatorKey: _navigatorKey,
-            initialRoute: '/home',
+          initialRoute: '/login', // <-- هنا التغيير
             routes: getRoutes(),
             debugShowCheckedModeBanner: false,
           );

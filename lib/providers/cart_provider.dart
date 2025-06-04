@@ -11,6 +11,9 @@ class CartProvider with ChangeNotifier {
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
   List<Order> get orders => _orders;
+bool isInCart(int productId) {
+  return _cartItems.any((item) => item.product.id == productId);
+}
 
   Future<void> addToCart(Product product, int quantity) async {
     try {
