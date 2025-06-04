@@ -21,7 +21,7 @@ class Product {
     return Product(
       id: json['id'],
       name: json['name'],
-      category: json['category'], // ✅ لازم يكون String مش Map
+      category: json['category'], 
       description: json['description'],
       price: (json['price'] as num).toDouble(),
       discount: json['discount'] ?? 0,

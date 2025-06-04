@@ -10,7 +10,7 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
-    const int currentIndex = 2; // Orders is the third item
+    const int currentIndex = 2; 
 
     return Scaffold(
       appBar: AppBar(
@@ -192,7 +192,7 @@ class OrdersScreen extends StatelessWidget {
                 Navigator.pushNamed(context, CartScreen.routeName);
                 break;
               case 2:
-                break; // Already on OrdersScreen
+                break; 
             }
           },
         ),

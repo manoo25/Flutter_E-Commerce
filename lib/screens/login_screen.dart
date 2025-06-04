@@ -16,7 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _rememberMe = false;  // هنا حالة ال checkbox
+  bool _rememberMe = false;  
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'remember_me': _rememberMe, // لو API بيدعمها تقدر ترسلها هنا
+          'remember_me': _rememberMe, 
         }),
       );
 
@@ -202,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
 
-                            // ** هنا خانة Remember Me **
+                            
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -245,7 +245,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                            // ** هنا زر التسجيل **
+                       
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -256,7 +256,6 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    // تنقل لصفحة التسجيل
                                     Navigator.of(context).pushNamed('/register');
                                   },
                                   child: const Text(

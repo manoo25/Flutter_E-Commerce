@@ -14,7 +14,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const int currentIndex = 3; // Profile is the fourth item
+    const int currentIndex = 3; 
 
     return Scaffold(
       appBar: AppBar(
@@ -173,7 +173,7 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.pushNamed(context, OrdersScreen.routeName);
                 break;
               case 3:
-                break; // Already on ProfileScreen
+                break; 
             }
           },
         ),

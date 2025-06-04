@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -16,7 +15,6 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -27,14 +25,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   DateTime? _selectedDate;
   String? _selectedGender;
-
   File? _profileImage;
   XFile? _pickedImageXFile;
   Uint8List? _imageBytes;
-
   final ImagePicker _picker = ImagePicker();
-
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -71,28 +68,10 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
     }
-  }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Email is required';
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) return 'Enter a valid email';
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) return 'Password is required';
-    if (value.length < 6) return 'Password must be at least 6 characters';
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value != _passwordController.text) return 'Passwords do not match';
-    return null;
   }
 
   Future<void> _register() async {
@@ -100,19 +79,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select your date of birth')));
+        const SnackBar(content: Text('Please select your date of birth')),
+      );
       return;
     }
 
     if (_selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select your gender')));
+        const SnackBar(content: Text('Please select your gender')),
+      );
       return;
     }
 
     if (_profileImage == null && _pickedImageXFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a profile image')));
+        const SnackBar(content: Text('Please select a profile image')),
+      );
       return;
     }
 
@@ -120,14 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _isLoading = true;
     });
 
-    String profileImagePath = '';
-    if (kIsWeb && _pickedImageXFile != null) {
-      profileImagePath = _pickedImageXFile!.name;
-    } else if (_profileImage != null) {
-      profileImagePath = _profileImage!.path.split('/').last;
-    }
-
-    bool success = await register(
+    bool success = await registerUser(
       firstName: _firstNameController.text.trim(),
       phone: _phoneController.text.trim(),
       email: _emailController.text.trim(),
@@ -135,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
       address: _addressController.text.trim(),
       dateOfBirth: _selectedDate!,
       gender: _selectedGender!,
-      profileImagePath: profileImagePath,
+      profileImageFile: _profileImage,
     );
 
     setState(() {
@@ -144,9 +119,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (success) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Registration successful!')));
       Navigator.of(context).pushReplacementNamed('/login');
     } else {
       if (!mounted) return;
@@ -170,106 +145,300 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'First Name'),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'First name is required' : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: _validateEmail,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Phone number is required' : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: _validatePassword,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(labelText: 'Confirm Password'),
-                obscureText: true,
-                validator: _validateConfirmPassword,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Address'),
-                maxLines: 3,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Address is required' : null,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _selectedDate == null
-                          ? 'Select Date of Birth'
-                          : 'DOB: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80',
+            ),
+            fit: BoxFit.cover,
+            opacity: 0.2,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.pink,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundImage: _profileImage != null
+                                  ? FileImage(_profileImage!)
+                                  : _imageBytes != null
+                                  ? MemoryImage(_imageBytes!)
+                                  : null,
+                              backgroundColor: Colors.grey[300],
+                              child:
+                                  _profileImage == null && _imageBytes == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Colors.pink,
+                                    )
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Material(
+                                color: Colors.pink,
+                                borderRadius: BorderRadius.circular(20),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: _pickImage,
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        TextFormField(
+                          controller: _firstNameController,
+                          decoration: InputDecoration(
+                            labelText: 'First Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                          ),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'First name is required'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Email required';
+                            final emailRegex = RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            );
+                            if (!emailRegex.hasMatch(v))
+                              return 'Enter a valid email';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Phone Number',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                          ),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'Phone number is required'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+                          validator: (v) => v != null && v.length >= 6
+                              ? null
+                              : 'Password must be at least 6 chars',
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscureConfirmPassword =
+                                    !_obscureConfirmPassword,
+                              ),
+                            ),
+                          ),
+                          validator: (v) => v == _passwordController.text
+                              ? null
+                              : 'Passwords do not match',
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _addressController,
+                          decoration: InputDecoration(
+                            labelText: 'Address',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                          ),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'Address is required'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          tileColor: Colors.white.withOpacity(0.9),
+                          title: Text(
+                            _selectedDate == null
+                                ? 'Select Date of Birth'
+                                : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                          ),
+                          trailing: const Icon(
+                            Icons.calendar_today,
+                            color: Colors.pink,
+                          ),
+                          onTap: _pickDate,
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          hint: const Text('Select Gender'),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                          ),
+                          items: ['Male', 'Female']
+                              .map(
+                                (g) =>
+                                    DropdownMenuItem(value: g, child: Text(g)),
+                              )
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedGender = val),
+                          validator: (v) =>
+                              v == null ? 'Gender is required' : null,
+                        ),
+                        const SizedBox(height: 20),
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.pink,
+                                ),
+                              )
+                            : ElevatedButton(
+                                onPressed: _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.pink,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Register',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "I don't have an account? ",
+                              style: TextStyle(color: Colors.pink),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).pushNamed('/login');
+                              },
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.pink,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: _pickDate,
-                    child: const Text('Pick Date'),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: _selectedGender,
-                items: ['Male', 'Female', 'Other']
-                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                    .toList(),
-                onChanged: (val) => setState(() => _selectedGender = val),
-                decoration: const InputDecoration(labelText: 'Gender'),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Gender is required' : null,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  (_profileImage == null && _imageBytes == null)
-                      ? const Text('No image selected')
-                      : kIsWeb
-                          ? Image.memory(_imageBytes!, width: 80, height: 80)
-                          : Image.file(_profileImage!, width: 80, height: 80),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _pickImage,
-                    child: const Text('Select Profile Image'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _register,
-                      child: const Text('Register'),
-                    ),
-            ],
+            ),
           ),
         ),
       ),
@@ -277,7 +446,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-Future<bool> register({
+Future<bool> registerUser({
   required String firstName,
   required String phone,
   required String email,
@@ -285,45 +454,39 @@ Future<bool> register({
   required String address,
   required DateTime dateOfBirth,
   required String gender,
-  required String profileImagePath,
+  required File? profileImageFile,
 }) async {
   try {
     var uri = Uri.parse('https://ib.jamalmoallart.com/api/v2/register');
-
     var request = http.MultipartRequest('POST', uri);
 
     request.fields['first_name'] = firstName;
-    request.fields['last_name'] = profileImagePath;
+    request.fields['last_name'] = 'image';
     request.fields['phone'] = phone;
     request.fields['email'] = email;
     request.fields['password'] = password;
 
-    String combinedAddress =
+    request.fields['address'] =
         '$address | DOB: ${dateOfBirth.toIso8601String()} | Gender: $gender';
-    request.fields['address'] = combinedAddress;
+
+    if (profileImageFile != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('photo', profileImageFile.path),
+      );
+    }
 
     var response = await request.send();
-
-    final respStr = await response.stream.bytesToString();
+    var responseBody = await response.stream.bytesToString();
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      print('Registration success: $respStr');
+      print('Success: $responseBody');
       return true;
     } else {
-      print('Registration failed: ${response.statusCode}, $respStr');
-      String errorMessage = 'Registration failed, please try again';
-      try {
-        final jsonResp = jsonDecode(respStr);
-        if (jsonResp['message'] != null) {
-          errorMessage = jsonResp['message'];
-        } else if (jsonResp['error'] != null) {
-          errorMessage = jsonResp['error'];
-        }
-      } catch (_) {}
-      throw Exception(errorMessage);
+      print('Failed: $responseBody');
+      return false;
     }
   } catch (e) {
-    print('Error during registration: $e');
+    print('Error: $e');
     return false;
   }
 }

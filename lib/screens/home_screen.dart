@@ -11,8 +11,7 @@ import '../providers/cart_provider.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
-import 'category_screen.dart';
-import 'profile_screen.dart'; // تأكد أنك عامل الصفحة دي
+import 'profile_screen.dart'; 
 import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
@@ -83,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.pushNamed(context, ProfileScreen.routeName);
     } else if (value == 'logout') {
       await AuthService.clearUserData();
-      Navigator.pushReplacementNamed(context, '/login'); // تأكد أن عندك مسار login
+      Navigator.pushReplacementNamed(context, '/login'); 
     }
   }
 

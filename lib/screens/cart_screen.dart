@@ -10,7 +10,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
-    const int currentIndex = 1; // Cart is the second item
+    const int currentIndex = 1; 
 
     return Scaffold(
       appBar: AppBar(
@@ -56,8 +56,8 @@ class CartScreen extends StatelessWidget {
                                       },
                                       errorBuilder: (context, error, stackTrace) {
                                         print('Image load error: $error, URL: ${cartItem.image}');
-                                        return Image.asset(
-                                          'assets/images/placeholder.jpg',
+                                        return Image.network(
+                                          'https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg',
                                           width: 60,
                                           height: 60,
                                           fit: BoxFit.contain,
@@ -255,7 +255,7 @@ class CartScreen extends StatelessWidget {
                 Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                 break;
               case 1:
-                break; // Already on CartScreen
+                break; 
               case 2:
                 Navigator.pushNamed(context, OrdersScreen.routeName);
                 break;
