@@ -1,89 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../models/cart_item_model.dart';
 import '../models/product_model.dart';
+import '../models/order_model.dart';
 
 class CartProvider with ChangeNotifier {
-  List<CartItem> _items = [];
+  List<CartItem> _cartItems = [];
+  static List<Order> _orders = []; // Static list to store orders
+  bool _isLoading = false;
 
-  List<CartItem> get items => _items;
+  List<CartItem> get cartItems => _cartItems;
+  bool get isLoading => _isLoading;
+  List<Order> get orders => _orders; // Getter for orders
+
+  Future<void> addToCart(Product product, int quantity) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final cartItem = CartItem(product: product, quantity: quantity);
+
+      // Check if product already exists in cart
+      final existingItemIndex = _cartItems.indexWhere(
+        (item) => item.product.id == product.id,
+      );
+
+      if (existingItemIndex != -1) {
+        // Update quantity if product exists
+        _cartItems[existingItemIndex] = CartItem(
+          product: product,
+          quantity: _cartItems[existingItemIndex].quantity + quantity,
+        );
+      } else {
+        // Add new item to cart
+        _cartItems.add(cartItem);
+      }
+
+      print('Cart updated: ${_cartItems.length} items');
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error adding to cart: $e');
+      _isLoading = false;
+      notifyListeners();
+      throw Exception('Failed to add to cart: $e');
+    }
+  }
+
+  Future<void> removeFromCart(int productId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      _cartItems.removeWhere((item) => item.product.id == productId);
+      print('Item removed from cart: $productId');
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error removing from cart: $e');
+      _isLoading = false;
+      notifyListeners();
+      throw Exception('Failed to remove from cart: $e');
+    }
+  }
+
+  Future<void> checkout() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      if (_cartItems.isEmpty) {
+        throw Exception('Cart is empty');
+      }
+
+      // Create a new order from cart items
+      final order = Order(
+        id: _orders.length + 1, // Simple ID generation
+        items: List.from(_cartItems),
+        total: totalPrice,
+        date: DateTime.now(), // Fixed: Use DateTime.now() instead of 'Today'
+      );
+
+      // Add to static orders list
+      _orders.add(order);
+      print('Order added: Order #${order.id}, Total: \$${order.total}');
+
+      // Clear cart after checkout
+      _cartItems.clear();
+      print('Cart cleared after checkout');
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Checkout error: $e');
+      _isLoading = false;
+      notifyListeners();
+      throw Exception('Checkout failed: $e');
+    }
+  }
 
   double get totalPrice {
-    return _items.fold(0, (total, item) {
+    return _cartItems.fold(0.0, (sum, item) {
       final discountedPrice = item.product.price * (1 - item.product.discount / 100);
-      return total + discountedPrice * item.quantity;
+      return sum + (discountedPrice * item.quantity);
     });
   }
 
-  int get itemCount => _items.length;
-
-  Future<void> loadCart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cartData = prefs.getString('cart');
-    if (cartData != null) {
-      final List<dynamic> decodedData = jsonDecode(cartData);
-      _items = decodedData.map((item) => CartItem.fromJson(item)).toList();
-      notifyListeners();
-    }
-  }
-
-  Future<void> saveCart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encodedData = jsonEncode(_items.map((item) => item.toJson()).toList());
-    await prefs.setString('cart', encodedData);
-  }
-
-  void addItem(String id, String name, double price, String image) {
-    final existingIndex = _items.indexWhere((item) => item.product.id == id);
-    if (existingIndex >= 0) {
-      _items[existingIndex] = CartItem(
-        product: _items[existingIndex].product,
-        quantity: _items[existingIndex].quantity + 1,
-      );
-    } else {
-      _items.add(CartItem(
-        product: Product(
-          id: id,
-          name: name,
-          price: price,
-          image: image,
-          discount: 0.0,
-          category: 'Uncategorized',
-          description: '',
-        ),
-        quantity: 1,
-      ));
-    }
-    saveCart();
-    notifyListeners();
-  }
-
-  Future<void> removeFromCart(String id) async {
-    _items.removeWhere((item) => item.product.id == id);
-    await saveCart();
-    notifyListeners();
-  }
-
-  void clearCart() {
-    _items = [];
-    saveCart();
-    notifyListeners();
-  }
-
-  void updateQuantity(String id, int quantity) {
-    if (quantity <= 0) {
-      removeFromCart(id);
-    } else {
-      final index = _items.indexWhere((item) => item.product.id == id);
-      if (index >= 0) {
-        _items[index] = CartItem(
-          product: _items[index].product,
-          quantity: quantity,
-        );
-        saveCart();
-        notifyListeners();
-      }
-    }
-  }
+  int get itemCount => _cartItems.length;
 }

@@ -1,131 +1,108 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../models/category_model.dart';
 import '../models/product_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://ib.jamalmoallart.com/api';
-  static const String imageBaseUrl = 'https://ib.jamalmoallart.com';
+  static const String baseUrl = 'https://ib.jamalmoallart.com/api/v1'; // Replace with actual API base URL
+
+ Future<List<Category>> getCategories() async {
+  final url = Uri.parse('https://ib.jamalmoallart.com/api/v1/all/categories');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body);
+    return data.map((json) => Category(name: json.toString())).toList();
+  } else {
+    throw Exception('Failed to load categories: ${response.statusCode}');
+  }
+}
+
 
   Future<List<Product>> getProducts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      final headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
-
-      // List of possible endpoints to try
-      final endpoints = [
-        '$baseUrl/products',
-        '$baseUrl/api/products',
-        '$baseUrl/items',
-        '$baseUrl/shop/products',
-        '$baseUrl/v1/products',
-      ];
-
-      for (var endpoint in endpoints) {
-        final url = Uri.parse(endpoint);
-        print('Trying Products Endpoint: $url');
-        print('Get Products API Request Headers: $headers');
-
-        final response = await http.get(url, headers: headers);
-
-        print('Get Products API Response Status: ${response.statusCode}');
-        print('Get Products API Response Body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final List<dynamic> productsData = data is List ? data : data['data'] ?? [];
-          print('Parsed Products Data: $productsData');
-          return productsData.map((item) => Product.fromJson(item)).toList();
-        }
+      final response = await http.get(Uri.parse('$baseUrl/all/products'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load products: ${response.statusCode}');
       }
-
-      throw Exception('Failed to load products: No valid endpoint found');
     } catch (e) {
       print('Error fetching products: $e');
-      return [];
+      throw Exception('Failed to load products: $e');
     }
   }
 
-  Future<List<Product>> getProductsByCategory(String category) async {
+  Future<List<Product>> getProductsByCategory(String categoryName) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      final headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
-
-      // Try category endpoint
-      final url = Uri.parse('$baseUrl/products?category[in]=$category');
-      print('Get Products by Category API Request URL: $url');
-      print('Get Products by Category API Request Headers: $headers');
-
-      final response = await http.get(url, headers: headers);
-
-      print('Get Products by Category API Response Status: ${response.statusCode}');
-      print('Get Products by Category API Response Body: ${response.body}');
-
+      // Assuming API endpoint like /products?category=categoryName
+      final response = await http.get(Uri.parse('$baseUrl/products?category=$categoryName'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> productsData = data is List ? data : data['data'] ?? [];
-        print('Parsed Products by Category Data: $productsData');
-        return productsData.map((item) => Product.fromJson(item)).toList();
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load products by category: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load products for category: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching products by category: $e');
-      return [];
+      throw Exception('Failed to load products by category: $e');
     }
   }
 
-  Future<Map<String, dynamic>> getProfile() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      print('Retrieved token for profile: $token');
+Future<Map<String, dynamic>> login(String email, String password) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/signin'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
 
-      if (token == null || token.isEmpty) {
-        throw Exception('No token found. Please log in.');
-      }
+    print('Login API Request URL: ${Uri.parse('$baseUrl/auth/signin')}');
+    print('Login API Request Body: {"email": "$email", "password": "****"}');
+    print('Login API Response Status: ${response.statusCode}');
+    print('Login API Response Body: ${response.body}');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/profile'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      );
-
-      print('Profile request headers: ${response.request?.headers}');
-      print('Profile response status: ${response.statusCode}');
-      print('Profile response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final token = data['token']?.toString();
+      final firstName = data['user']?['firstName']?.toString() ?? 'User';
+      if (token != null && token.isNotEmpty) {
+        return {
+          'token': token,
+          'firstName': firstName,
+        };
       } else {
-        throw Exception('Failed to load profile: ${response.body}');
+        throw Exception('No token found in response');
+      }
+    } else {
+      throw Exception('Failed to login: ${response.statusCode} - ${response.body}');
+    }
+  } catch (e) {
+    print('Error logging in: $e');
+    throw Exception('Failed to login: $e');
+  }
+}
+
+  Future<void> logout(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to logout: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching profile: $e');
-      throw Exception('Unexpected error: $e');
+      print('Error logging out: $e');
+      throw Exception('Failed to logout: $e');
     }
   }
 
-  Future<void> clearToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('auth_token');
-      print('Token cleared');
-    } catch (e) {
-      print('Error clearing token: $e');
-    }
-  }
 }

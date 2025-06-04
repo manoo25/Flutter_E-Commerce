@@ -4,13 +4,13 @@ import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
-  static const routeName = '/product-details';
-  final Product product;
-
-  const ProductDetailsScreen({required this.product});
+  static const String route = "/product-details";
 
   @override
   Widget build(BuildContext context) {
+    final product = ModalRoute.of(context)!.settings.arguments as Product;
+    final cartProvider = Provider.of<CartProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name),
@@ -20,12 +20,18 @@ class ProductDetailsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.network(
-              product.image,
+              product.image ?? 'https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg',
               height: 300,
               width: double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                return Image.asset('assets/images/placeholder.jpg');
+                print('Image load error: $error, URL: ${product.image}');
+                return Image.asset(
+                  'assets/images/placeholder.jpg',
+                  height: 300,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                );
               },
             ),
             Padding(
@@ -35,31 +41,44 @@ class ProductDetailsScreen extends StatelessWidget {
                 children: [
                   Text(
                     product.name,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 8),
-                  Text('Category: ${product.category}'),
                   const SizedBox(height: 8),
                   Text(
-                    product.discount > 0
-                        ? '\$${(product.price * (1 - product.discount / 100)).toStringAsFixed(2)} (${product.discount}% off)'
-                        : '\$${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 20, color: Colors.green),
+                    'Category: ${product.category}',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
-                  Text(product.description),
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                  ),
+                  if (product.discount > 0)
+                    Text(
+                      '${product.discount}% off',
+                      style: const TextStyle(color: Colors.green),
+                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    product.description,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {
-                      Provider.of<CartProvider>(context, listen: false)
-                          .addItem(product.id, product.name, product.price, product.image);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${product.name} added to cart')),
-                      );
+                    onPressed: () async {
+                      try {
+                        await cartProvider.addToCart(product, 1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Added to cart')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
                     },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
                     child: const Text('Add to Cart'),
                   ),
                 ],
