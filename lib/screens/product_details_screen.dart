@@ -13,74 +13,121 @@ class ProductDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name),
+        title: Text(
+          product.name,
+          style: TextStyle(color: Colors.pink, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.pink),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              product.image ?? 'https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg',
-              height: 300,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                print('Image load error: $error, URL: ${product.image}');
-                return Image.asset(
-                  'assets/images/placeholder.jpg',
-                  height: 300,
+            Container(
+              margin: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  product.image ?? 'https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg',
+                  height: 250,
                   width: double.infinity,
-                  fit: BoxFit.cover,
-                );
-              },
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    print('Image load error: $error, URL: ${product.image}');
+                    return Image.asset(
+                      'assets/images/placeholder.jpg',
+                      height: 250,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    );
+                  },
+                ),
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.name,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.pink,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Category: ${product.category}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '\$${product.price.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Theme.of(context).primaryColor,
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        '\$${product.price.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.pink,
                         ),
+                      ),
+                      if (product.discount > 0)
+                        Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Text(
+                            '${product.discount}% off',
+                            style: TextStyle(fontSize: 16, color: Colors.green),
+                          ),
+                        ),
+                    ],
                   ),
-                  if (product.discount > 0)
-                    Text(
-                      '${product.discount}% off',
-                      style: const TextStyle(color: Colors.green),
-                    ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     product.description,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(fontSize: 16, color: Colors.black87),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        await cartProvider.addToCart(product, 1);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Added to cart')),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    },
-                    child: const Text('Add to Cart'),
+                  SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: InkWell(
+                      onTap: () async {
+                        try {
+                          await cartProvider.addToCart(product, 1);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${product.name} added to cart')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.pink,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: EdgeInsets.all(12),
+                        child: Icon(Icons.add_shopping_cart, color: Colors.white, size: 24),
+                      ),
+                    ),
                   ),
+                  SizedBox(height: 16),
                 ],
               ),
             ),

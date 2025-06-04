@@ -5,12 +5,12 @@ import '../models/order_model.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _cartItems = [];
-  static List<Order> _orders = []; // Static list to store orders
+  static List<Order> _orders = [];
   bool _isLoading = false;
 
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
-  List<Order> get orders => _orders; // Getter for orders
+  List<Order> get orders => _orders;
 
   Future<void> addToCart(Product product, int quantity) async {
     try {
@@ -19,19 +19,16 @@ class CartProvider with ChangeNotifier {
 
       final cartItem = CartItem(product: product, quantity: quantity);
 
-      // Check if product already exists in cart
       final existingItemIndex = _cartItems.indexWhere(
         (item) => item.product.id == product.id,
       );
 
       if (existingItemIndex != -1) {
-        // Update quantity if product exists
         _cartItems[existingItemIndex] = CartItem(
           product: product,
           quantity: _cartItems[existingItemIndex].quantity + quantity,
         );
       } else {
-        // Add new item to cart
         _cartItems.add(cartItem);
       }
 
@@ -64,6 +61,35 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateQuantity(int productId, int newQuantity) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final itemIndex = _cartItems.indexWhere((item) => item.product.id == productId);
+      if (itemIndex != -1) {
+        if (newQuantity > 0) {
+          _cartItems[itemIndex] = CartItem(
+            product: _cartItems[itemIndex].product,
+            quantity: newQuantity,
+          );
+          print('Quantity updated for product $productId: $newQuantity');
+        } else {
+          _cartItems.removeAt(itemIndex);
+          print('Item removed from cart: $productId');
+        }
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error updating quantity: $e');
+      _isLoading = false;
+      notifyListeners();
+      throw Exception('Failed to update quantity: $e');
+    }
+  }
+
   Future<void> checkout() async {
     try {
       _isLoading = true;
@@ -73,19 +99,16 @@ class CartProvider with ChangeNotifier {
         throw Exception('Cart is empty');
       }
 
-      // Create a new order from cart items
       final order = Order(
-        id: _orders.length + 1, // Simple ID generation
+        id: _orders.length + 1,
         items: List.from(_cartItems),
         total: totalPrice,
-        date: DateTime.now(), // Fixed: Use DateTime.now() instead of 'Today'
+        date: DateTime.now(),
       );
 
-      // Add to static orders list
       _orders.add(order);
       print('Order added: Order #${order.id}, Total: \$${order.total}');
 
-      // Clear cart after checkout
       _cartItems.clear();
       print('Cart cleared after checkout');
 
