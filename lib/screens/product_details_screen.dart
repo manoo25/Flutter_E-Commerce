@@ -47,8 +47,8 @@ class ProductDetailsScreen extends StatelessWidget {
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     print('Image load error: $error, URL: ${product.image}');
-                    return Image.asset(
-                      'assets/images/placeholder.jpg',
+                    return Image.network(
+                      'https://ecommerce.routemisr.com/Route-Academy-products/1678305677165-cover.jpeg',
                       height: 250,
                       width: double.infinity,
                       fit: BoxFit.contain,
